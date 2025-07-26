@@ -30,17 +30,41 @@ export default function App() {
   const [Story, setStory] = useState('');
   const [Diagnosis, setDiagnosis] = useState('');
   const [MC, setMC] = useState('');
-  const [timeline, setTimeline] = useState([{ time: '', action: '' }]);
+  const [sgtname, setSgtname] = useState('');
+  const [Nilyesorno, setNilyesorno] = useState('');
+  const [yesorno, setYesorno] = useState('');
+  const [timeline, setTimeline] = useState([
+    { time: '', action: 'Serviceman informed 3SG ${sgtname} that he will be rsoing for ${reason}.' },
+    { time: '', action: 'Serviceman left home for A&E via ${Transport}.' },
+    { time: '', action: 'Serviceman reached A&E and went for registration.' },
+    { time: '', action: 'Serviceman went for triage.' },
+    { time: '', action: 'Serviceman saw the doctor. ${Story}' },
+    { time: '', action: 'Serviceman collected his medications.' },
+    { time: '', action: 'Serviceman left A&E.' },
+    { time: '', action: 'Serviceman reached home safely via ${Transport}.' },
+  ]);
   const [output, setOutput] = useState('');
 
   const formatSentence = () => {
-    let sentence = '';
-    let timelineText = `${date}\n`;
+    let timelineText = '';
     timeline.forEach((entry) => {
       if (entry.time && entry.action) {
-        timelineText += `${entry.time}: ${entry.action}\n`;
+        let processed = entry.action
+          .replace('${sgtname}', sgtname)
+          .replace('${reason}', reason)
+          .replace('${Transport}', Transport)
+          .replace('${Story}', Story);
+
+        const boldMatch = processed.match(/^.*?:/);
+        const formattedAction = boldMatch
+          ? `*${boldMatch[0]}*${processed.replace(boldMatch[0], '')}`
+          : processed;
+
+        timelineText += `${entry.time}hrs: ${formattedAction}\n\n`;
       }
     });
+
+    let sentence = '';
 
     if (templateChoice === 'RSO') {
       if (!RankName || !Reason) {
@@ -51,37 +75,38 @@ export default function App() {
     } else if (templateChoice === 'RSO Report') {
       if (
         !name || !batch || !date || !ic || !where || !reason || !pes || !voc ||
-        !Personneltime || !Personnel || !Transport || !Story || !Diagnosis || !MC
+        !Personneltime || !Personnel || !Transport || !Story ||
+        !Diagnosis || !MC || !sgtname || !Nilyesorno || !yesorno
       ) {
         Alert.alert('Please fill in all the details');
         return;
       }
 
-      sentence = `${reportType.toUpperCase()} REPORT:
+      sentence = `*${reportType.toUpperCase()} REPORT:*
 
-BATCH: ${batch}
-DATE: ${date}
+*BATCH:* ${batch}
+*DATE:* ${date}
 
-WHO: ${name} ${ic}
-WHAT: RSO at ${where}
-WHEN: ${date}
-WHERE: ${where}
-WHY: ${reason}
-HOW: -
-PES: ${pes}
-VOC: ${voc}
+*WHO:* ${name} ${ic}
+*WHAT:* RSO at ${where}
+*WHEN:* ${date}
+*WHERE:* ${where}
+*WHY:* ${reason}
+*HOW:* -
+*PES:* ${pes}
+*VOC:* ${voc}
 
-TIME INFORMED OPS ROOM: ${Personneltime}
-NAME OF DUTY PERSONNEL INFORMED: ${Personnel}
+*TIME INFORMED OPS ROOM:* ${Personneltime}
+*NAME OF DUTY PERSONNEL INFORMED:* ${Personnel}
 
-Timeline:
-${timelineText}
+*Timeline:*
+${date}
+${timelineText}Diagnosis: ${Diagnosis}
 
-Doctor Notes: ${Story}
-Diagnosis: ${Diagnosis}
-Any Memo: NIL
-Status: ${MC}
-NOK informed: Y`;
+*Any Memo:* ${Nilyesorno}
+*Status:* ${MC}
+
+*NOK informed:* ${yesorno}`;
     }
 
     setOutput(sentence);
@@ -92,6 +117,8 @@ NOK informed: Y`;
     Alert.alert('Copied to clipboard!');
   };
 
+  const timePlaceholders = ['0800', '0930', '0939', '0945', '0950', '1000', '1005', '1030'];
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -100,50 +127,50 @@ NOK informed: Y`;
         <View style={styles.buttonGroup}>
           <Button
             title="Normal RSO"
-            onPress={() => setTemplateChoice('RSO')}
+            onPress={() => {
+              setTemplateChoice('RSO');
+              setOutput('');
+            }}
             color={templateChoice === 'RSO' ? '#007AFF' : '#999'}
           />
           <Button
             title="RSO Report"
-            onPress={() => setTemplateChoice('RSO Report')}
-            color={templateChoice === 'RSO Report' ? '#007AFF' : '#999'}
+            onPress={() => {
+              setTemplateChoice('RSO Report');
+              setOutput('');
+            }}
+            color={templateChoice === 'RSO Report' ? '#00ff15ff' : '#999'}
           />
         </View>
 
         {templateChoice === 'RSO' && (
           <>
-            <TextInput
-              placeholder="4D Rank Name"
-              style={styles.input}
-              value={RankName}
-              onChangeText={setRankName}
-            />
-            <TextInput
-              placeholder="Reason"
-              style={styles.input}
-              value={Reason}
-              onChangeText={setReason}
-            />
+            <TextInput placeholder="4D Rank Name" style={styles.input} value={RankName} onChangeText={setRankName} />
+            <TextInput placeholder="Reason" style={styles.input} value={Reason} onChangeText={setReason} />
           </>
         )}
 
         {templateChoice === 'RSO Report' && (
           <>
-            {/* Initial / Final Toggle */}
             <View style={styles.buttonGroup}>
               <Button
                 title="Final Report"
-                onPress={() => setReportType('Final')}
+                onPress={() => {
+                  setReportType('Final');
+                  setOutput('');
+                }}
                 color={reportType === 'Final' ? '#007AFF' : '#999'}
               />
               <Button
                 title="Initial Report"
-                onPress={() => setReportType('Initial')}
+                onPress={() => {
+                  setReportType('Initial');
+                  setOutput('');
+                }}
                 color={reportType === 'Initial' ? '#007AFF' : '#999'}
               />
             </View>
 
-            {/* Inputs */}
             <TextInput placeholder="Name" style={styles.input} value={name} onChangeText={setName} />
             <TextInput placeholder="IC" style={styles.input} value={ic} onChangeText={setic} />
             <TextInput placeholder="Batch" style={styles.input} value={batch} onChangeText={setbatch} />
@@ -158,12 +185,15 @@ NOK informed: Y`;
             <TextInput placeholder="Doctor consultation details" style={styles.input} value={Story} onChangeText={setStory} />
             <TextInput placeholder="Diagnosis" style={styles.input} value={Diagnosis} onChangeText={setDiagnosis} />
             <TextInput placeholder="MC Status" style={styles.input} value={MC} onChangeText={setMC} />
+            <TextInput placeholder="SGT Name (e.g. Jet)" style={styles.input} value={sgtname} onChangeText={setSgtname} />
+            <TextInput placeholder="Any Memo (e.g. NIL/Yes)" style={styles.input} value={Nilyesorno} onChangeText={setNilyesorno} />
+            <TextInput placeholder="NOK Informed? (Yes/No)" style={styles.input} value={yesorno} onChangeText={setYesorno} />
 
             <Text style={styles.sectionTitle}>Timeline</Text>
             {timeline.map((entry, index) => (
-              <View key={index}>
+              <View key={index} style={{ marginBottom: 10 }}>
                 <TextInput
-                  placeholder="Time (e.g. 0900hrs)"
+                  placeholder={`e.g. ${timePlaceholders[index] || '0900'}`}
                   style={styles.input}
                   value={entry.time}
                   onChangeText={(text) => {
@@ -202,10 +232,24 @@ NOK informed: Y`;
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  scrollContainer: { paddingBottom: 100 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 15 },
-  sectionTitle: { fontWeight: 'bold', marginTop: 20, marginBottom: 5 },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#ffffffff',
+  },
+  scrollContainer: {
+    paddingBottom: 100,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 5,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -215,9 +259,10 @@ const styles = StyleSheet.create({
   },
   output: {
     marginTop: 20,
-    backgroundColor: '#f1f1f1',
+    backgroundColor: '#fff',
     padding: 10,
     borderRadius: 6,
+    borderWidth: 1.5
   },
   buttonGroup: {
     flexDirection: 'row',
